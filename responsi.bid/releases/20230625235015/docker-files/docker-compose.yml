@@ -1,0 +1,18 @@
+shorturl:
+    image: responsi-short-url
+    ports:
+        - "3333:3333"
+    volumes:
+        - ../:/code/website
+        - ~/.ssh:/root/.ssh
+    links:
+        - mysql
+
+mysql:
+    image: mysql:5.6
+    environment:
+        - MYSQL_ROOT_PASSWORD=secret
+    ports:
+        - "3306:3306"
+    volumes:
+        - ../../docker-mysql-data:/var/lib/mysql

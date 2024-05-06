@@ -1,0 +1,38 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+#      - aws s3 cp $SHARED_S3_PATH/id_rsa ~/.ssh/
+#      - chmod 600 ~/.ssh/id_rsa
+#      - eval "$(ssh-agent -s)"
+#      - ssh-add ~/.ssh/id_rsa
+      - apt-get update
+      - apt-get install --yes --force-yes curl
+      - curl -sL https://deb.nodesource.com/setup_10.x | bash -
+      - apt-get install --yes --force-yes nodejs
+      # Install npm
+      - npm install --global webpack webpack-cli yarn
+      # download configuration files
+      - aws s3 sync $SHARED_S3_PATH/shared ./shared
+      #pre-flight will move our shared files
+      - chmod 755 ./pre-flight.sh
+      - ./pre-flight.sh
+      #install nodejs stuff and build
+      - yarn
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - $(aws ecr get-login --region us-west-2 --no-include-email)
+  build:
+    commands:
+      - echo Build started on `date`
+      - docker build -f ./docker-files/Dockerfile -t web-app-image .
+      - docker tag web-app-image:latest $IMAGE_REPO_APP
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $IMAGE_REPO_APP
+  post_build:
+    commands:
+
+      #- docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
